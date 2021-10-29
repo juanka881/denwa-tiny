@@ -318,33 +318,33 @@ export class Tiny implements Resolver {
 			}
 
 			switch(reg.lifetime) {
-			// always return a new value no caching
-			case 'resolve': {
-				return { ok: true, value: reg.build(this) };
-			}
-
-			// always return the same value cached at the
-			// scope where defined
-			case 'scope': {
-				let value = this.getCache(this, reg);
-				if(!value) {
-					value = reg.build(this);
-					this.setCache(this, reg, value);
+				// always return a new value no caching
+				case 'resolve': {
+					return { ok: true, value: reg.build(this) };
 				}
 
-				return { ok: true, value };
-			}
+				// always return the same value cached at the
+				// scope where defined
+				case 'scope': {
+					let value = this.getCache(this, reg);
+					if(!value) {
+						value = reg.build(this);
+						this.setCache(this, reg, value);
+					}
 
-			// always return the same value cached at the root scope
-			case 'single': {
-				let value = this.getCache(this.root, reg);
-				if(!value) {
-					value = reg.build(this);
-					this.setCache(this.root, reg, value);
+					return { ok: true, value };
 				}
 
-				return { ok: true, value };
-			}
+				// always return the same value cached at the root scope
+				case 'single': {
+					let value = this.getCache(this.root, reg);
+					if(!value) {
+						value = reg.build(this);
+						this.setCache(this.root, reg, value);
+					}
+
+					return { ok: true, value };
+				}
 			}
 		}
 
