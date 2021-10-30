@@ -1,7 +1,7 @@
 {
   "name": "@denwa/tiny",
   "version": "1.0.0",
-  "description": "",
+  "description": "typescript dependency injection container",
   "main": "index.js",
   "scripts": {
     "clean": "rimraf ./dist",
