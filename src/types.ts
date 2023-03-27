@@ -46,7 +46,6 @@ export type WrappedKey<TService> = StringKeyWrapper<TService> | SymbolKeyWrapper
  */
 export type ResolveKey<TService> = WrappedKey<TService> | LookupKey<TService>;
 
-
 /**
  * interface use to allow a service resolver to rsolve
  * values
