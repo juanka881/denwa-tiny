@@ -79,7 +79,7 @@ export function getParameterInfos(cls: Class<any>): ParameterInfo[] {
 }
 
 /**
- * class decorator, use to tag a class as a service
+ * class decorator used to tag a class as a service
  * this will make the ts compiler attach the design:paramtypes
  * metadata which we will use to get the list of the constructor
  * parameters so we can resolve their service values from the container
@@ -89,6 +89,14 @@ export function service(): ClassDecorator {
 	return function(target: unknown): void {}
 }
 
+/**
+ * parameter decorator used to set parameter resolve information. 
+ * this will allow the container to know how this class constructor parameter
+ * is supposed to be resolve.
+ * @param key resolve key
+ * @param tag resolve tag
+ * @returns paramter decorator
+ */
 export function inject(key: ResolveKey<any>, tag?: string): ParameterDecorator {
 	return function(target: unknown, propertyKey: string | Symbol, parameterIndex: number): void {
 		const parameterInfos: ParametersInfo = Reflect.getOwnMetadata(ParameterInfosKey, target as Object) ?? {};
