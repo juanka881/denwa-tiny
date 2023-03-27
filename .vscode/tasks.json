@@ -1,0 +1,20 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "npm",
+			"script": "build",
+			"group": "build",
+			"problemMatcher": ["$tsc"],
+			"label": "build",
+			"detail": "build project"
+		},
+		{
+			"type": "npm",
+			"script": "clean",
+			"problemMatcher": [],
+			"label": "clean",
+			"detail": "clean outputs"
+		}
+	]
+}
