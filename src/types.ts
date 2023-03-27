@@ -48,10 +48,26 @@ export type ResolveKey<TService> = WrappedKey<TService> | LookupKey<TService>;
 
 
 /**
- * 
+ * interface use to allow a service resolver to rsolve
+ * values
  */
 export interface Resolver {
+	/**
+	 * try to resolve a service value from the container.
+	 * @param key resolve key
+	 * @param tag resolve tag
+	 * @returns service value if resolved, undefined otherwise
+	 */
 	tryResolve<T = any>(key: ResolveKey<T>, tag?: string): T | undefined;
+
+	/**
+	 * resolve a service value from the container. 
+	 * throws if not found.
+	 * @param key resolve key
+	 * @param tag resolve tag
+	 * @returns service value
+	 * @throws if service cannot be resolved
+	 */
 	resolve<T = any>(key: ResolveKey<T>, tag?: string): T;
 }
 
