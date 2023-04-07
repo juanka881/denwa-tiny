@@ -2,6 +2,8 @@ import 'reflect-metadata';
 import { Class, isConstructor } from './reflection';
 import { ResolveKey } from './types';
 
+export type ParameterDecoratorV5 = (target: Object, propertyKey: string | symbol | undefined, parameterIndex: number) => void;
+
 /**
  * contains the information required to determine
  * how to resolve a class constructor parameter
@@ -97,8 +99,8 @@ export function service(): ClassDecorator {
  * @param tag resolve tag
  * @returns paramter decorator
  */
-export function inject(key: ResolveKey<any>, tag?: string): ParameterDecorator {
-	return function(target: unknown, propertyKey: string | Symbol, parameterIndex: number): void {
+export function inject(key: ResolveKey<any>, tag?: string): ParameterDecoratorV5 {
+	return function(target, propertyKey, parameterIndex): void {
 		const parameterInfos: ParametersInfo = Reflect.getOwnMetadata(ParameterInfosKey, target as Object) ?? {};
 		const parameterInfo: ParameterInfo = {
 			parameterIndex,
