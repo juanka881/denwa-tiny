@@ -39,7 +39,7 @@ export interface ParametersInfo {
  * reflection key use to keep a list of parameter infos objects 
  * for the given class
  */
-export const ParameterInfosKey = Symbol.for('container:parameterInfos');
+export const ParameterInfosKey = Symbol.for('tiny:paramter_infos');
 
 /**
  * cache use to prevent rebuilding the parameter information
@@ -87,7 +87,7 @@ export function getParameterInfos(cls: Class<any>): ParameterInfo[] {
  * parameters so we can resolve their service values from the container
  * @returns class decorator
  */
-export function service(): ClassDecorator {
+export function register(): ClassDecorator {
 	return function(target: unknown): void {}
 }
 
