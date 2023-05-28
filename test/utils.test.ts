@@ -1,5 +1,5 @@
-import { suite, test } from 'mocha';
+import { describe, test } from 'vitest';
 
-suite('utils: stringKey', function() {
+describe('utils: stringKey', function() {
 	test('foo', function() {});
 });

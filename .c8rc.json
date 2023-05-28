@@ -1,9 +1,0 @@
-{
-	"include": ["src"],
-	"reporter": [
-		"lcov",
-		"text",
-		"text-summary"
-	],
-	"report-dir": "./dist/coverage"
-}
