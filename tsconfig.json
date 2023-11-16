@@ -12,8 +12,8 @@
 		"esModuleInterop": true,
 		"skipLibCheck": true,
 		"forceConsistentCasingInFileNames": true,
-		"rootDir": "./",
-		"outDir": "./dist"
+		"rootDir": ".",
+		"outDir": ".dist"
 	},
 	"exclude": [
 		"node_modules",

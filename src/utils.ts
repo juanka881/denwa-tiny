@@ -113,9 +113,9 @@ export function getLookupKey(key: ResolveKey<any>): LookupKey {
  * @param key resolve key
  * @returns string representation
  */
-export function keyToString(key: ResolveKey<any>): string {
+export function valueKeyToString(key: ResolveKey<any>): string {
 	if(isWrappedKey(key)) {
-		return keyToString(getLookupKey(key))
+		return valueKeyToString(getLookupKey(key))
 	}
 	else if(typeof key === 'string') {
 		return `string(${key})`;
