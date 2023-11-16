@@ -170,10 +170,10 @@ export interface RegisterOptions<TValue = any> {
 	 * the container will use this function callback
 	 * and pass a resolver instance to delegate the 
 	 * resolution of the service value
-	 * @param resolver resolver instance
+	 * @param scope resolver scope
 	 * @returns value
 	 */
-	get?: (resolver: Resolver) => TValue;
+	resolve?: (scope: Resolver) => TValue;
 }
 
 /**
@@ -215,9 +215,9 @@ export class Container implements Resolver {
 	private registerInner(options: RegisterOptions): void {
 		let provider: ValueProvider;
 
-		if(options.get) {
+		if(options.resolve) {
 			// use get provider
-			provider = { get: options.get }
+			provider = { get: options.resolve }
 		}		
 		else if(options.class) {
 			// use class provider
