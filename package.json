@@ -2,9 +2,9 @@
   "name": "@denwa/tiny",
   "version": "3.1.0",
   "description": "typescript dependency injection container",
-  "main": ".dist/src/index.js",
+  "main": "dist/src/index.js",
   "files": [
-    ".dist/src/*"
+    "dist/src/*"
   ],
   "repository": {
     "type": "git",
@@ -24,16 +24,16 @@
   "license": "ISC",
   "scripts": {
     "preinstall": "npx only-allow pnpm",
-    "clean": "rimraf ./dist",
+    "clean": "rimraf dist",
     "build": "tsc",
     "test": "vitest",
     "cover": "vitest run --coverage",
-    "coverv": "start .dist/coverage/lcov-report/index.html"
+    "coverv": "start dist/coverage/lcov-report/index.html"
   },
   "devDependencies": {
     "@types/chai": "^4.3.10",
-    "@types/node": "^20.9.0",
-    "@vitest/coverage-c8": "^0.33.0",
+    "@types/node": "^20.9.0",    
+    "@vitest/coverage-v8": "^0.34.6",
     "chai": "^4.3.10",
     "rimraf": "^5.0.5",
     "typescript": "^5.2.2",
