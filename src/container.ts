@@ -325,7 +325,7 @@ export class Container implements Resolver {
 		}
 	}
 
-	child(): Container {
+	createScope(): Container {
 		return new Container(this);
 	}
 }
