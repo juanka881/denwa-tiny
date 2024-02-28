@@ -1,113 +1,160 @@
 import 'reflect-metadata';
-import { Class, isConstructor } from './reflection';
-import { ResolveKey } from './types';
-
-export type ParameterDecoratorV5 = (target: Object, propertyKey: string | symbol | undefined, parameterIndex: number) => void;
+import { Class, ParameterDecoratorV5, ParameterInfo, getDesignParamerTypes, isConstructor } from './reflection.js';
+import { Lifetime, ResolveKey } from './types.js';
+import { InvalidConstructorError, InvalidParameterError } from './errors.js';
 
 /**
- * contains the information required to determine
- * how to resolve a class constructor parameter
+ * represents the type information
+ * used to resolve a parameter in a class constructor
  */
-export interface ParameterInfo {
+export interface ParameterResolveInfo {
 	/**
-	 * parameter position index
+	 * parameter information
 	 */
-	index: number;
+	parameter: ParameterInfo;
 
 	/**
-	 * resolve key to use to resolve a servie value 
-	 * and inject the value into this parameter from container
+	 * resolve key
 	 */
-	key: ResolveKey<any>;
+	key?: ResolveKey;
 
 	/**
-	 * tag to use when resolving a service value
-	 * to inject for this parameter
+	 * resolve tag
 	 */
 	tag?: string;
 }
 
 /**
- * contains a mapping of the parameter index position
- * and their parameter resolve information
+ * represents the type information
+ * used to resolve a class constructor
+ * and inject dependencies
  */
-export interface ParameterList {
-	[key: string]: ParameterInfo;
+export interface ClassResolveInfo {
+	/**
+	 * class constructor function
+	 */
+	key: Class;
+
+	/**
+	 * list of parameters for constructor
+	 */
+	parameters: Map<number, ParameterResolveInfo>;
+
+	/**
+	 * resolve value lifetime
+	 */
+	lifetime?: Lifetime;
+
+	/**
+	 * resolve value tag
+	 */
+	tag?: string;
 }
 
 /**
- * reflection key use to keep a list of parameter infos objects 
- * for the given class
+ * reflection metadata key used to store the class resolve information
  */
-export const ParameterListKey = Symbol.for('tiny:parameter_list');
+export const CLASS_RESOLVE_INFO = Symbol.for('tiny:class_resolve_info');
 
 /**
- * cache use to prevent rebuilding the parameter information
+ * cache use to prevent rebuilding the constructor information
  * for a class on every request
  */
-export const parametersCache = new Map<Class<any>, ParameterInfo[]>();
+export const classResolveInfoCache = new Map<Class, ClassResolveInfo>();
 
 /**
- * returns the parameter info for a class constructor
- * @param cls class constructor
- * @returns parameter infos list
+ * clear the class resolve info cache
  */
-export function getParameterList(cls: Class<any>): ParameterInfo[] {
-	let parameters = parametersCache.get(cls);
-	if(parameters) {
-		return parameters;
+export function clearClassResolveInfoCache(): void {
+	classResolveInfoCache.clear();
+}
+
+/**
+ * gets the class resolve info for a class constructor
+ * @param _class class constructor
+ */
+export function getClassResolveInfo(_class: Class): ClassResolveInfo {
+	let classInfo = classResolveInfoCache.get(_class);
+	if(classInfo) {
+		return classInfo;
 	}
 
-	const parameterTypes: unknown[] = Reflect.getMetadata('design:paramtypes', cls) ?? [];
-	const parameterList: ParameterList = Reflect.getOwnMetadata(ParameterListKey, cls) ?? {};
+	const parameterTypes = getDesignParamerTypes(_class)
+	classInfo = {
+		key: _class,
+		parameters: new Map()
+	};
 
-	parameters = parameterTypes.map((type: unknown, index: number) => {
-		const parameterInfo = parameterList[index];
-		if(parameterInfo) {
-			return parameterInfo;
-		}
-
-		if(isConstructor(type)) {
-			return {
+	for(const [index, type] of parameterTypes.entries()) {
+		const parameterInfo: ParameterResolveInfo = {
+			parameter: {
 				index: index,
-				key: type as Class<any>
-			}
+				type: type
+			},
+			key: type as ResolveKey,
+			tag: undefined
+		}
+		classInfo.parameters.set(index, parameterInfo);
+	}
+
+	classResolveInfoCache.set(_class, classInfo);
+	return classInfo;
+}
+
+/**
+ * decorates a class to be register and automatically resolved
+ * from the container.
+ */
+export function injectable(lifetime?: Lifetime, tag?: string): ClassDecorator {
+	return function(target: unknown): void {
+		if(!isConstructor(target)) {
+			throw new InvalidConstructorError('@injectable() decorator can only be used on class constructors', {
+				target
+			});
 		}
 
-		throw new Error(`invalid parameter: cannot resolve parameter type, no @inject() metadata and no constructor info found, class=${cls.name}, parameter_type=${type}, parameter_index=${index}`);
-	});
-
-	return parameters;
+		const classInfo = getClassResolveInfo(target as Class);
+		classInfo.lifetime = lifetime;
+		classInfo.tag = tag;
+	}
 }
 
 /**
- * class decorator used to tag a class and enable metadata. 
- * this will make the ts compiler attach the design:paramtypes
- * metadata which we will use to get the list of the constructor
- * parameters so we can resolve their service values from the container
- * @returns class decorator
+ * decorates a class to be register and automatically resolved
+ * from the container as a single instance.
  */
-export function register(): ClassDecorator {
-	return function(target: unknown): void {}
+export function singleton(tag?: string): ClassDecorator {
+	return injectable('single', tag);
 }
 
 /**
- * parameter decorator used to set parameter resolve information. 
+ * decorates a class to be register and automatically resolved
+ * from the container scoped to the resolving container.
+ */
+export function scoped(tag?: string): ClassDecorator {
+	return injectable('scope', tag);
+}
+
+/**
+ * parameter decorator used to set parameter resolve information.
  * this will allow the container to know how this class constructor parameter
- * is supposed to be resolve.
+ * is supposed to be resolved.
  * @param key resolve key
  * @param tag resolve tag
  * @returns paramter decorator
  */
 export function inject(key: ResolveKey<any>, tag?: string): ParameterDecoratorV5 {
 	return function(target, propertyKey, parameterIndex): void {
-		const parameterList: ParameterList = Reflect.getOwnMetadata(ParameterListKey, target as Object) ?? {};
-		const parameterInfo: ParameterInfo = {
-			index: parameterIndex,
-			key: key,
-			tag: tag
+		const classInfo = getClassResolveInfo(target as Class);
+		const parameter = classInfo.parameters.get(parameterIndex);
+		if(!parameter) {
+			throw new InvalidParameterError('parameter index out of range', {
+				class_name: target.constructor.name,
+				parameter_index: parameterIndex
+			});
 		}
-		parameterList[parameterIndex] = parameterInfo;
-		Reflect.defineMetadata(ParameterListKey, parameterList, target as Object);
+
+		parameter.key = key;
+		parameter.tag = tag;
 	}
 }

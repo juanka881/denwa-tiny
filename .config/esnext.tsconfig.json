@@ -1,0 +1,21 @@
+{
+	"$schema": "https://json.schemastore.org/tsconfig",
+	"compilerOptions": {
+		"module": "nodenext",
+		"target": "esnext",
+		"strict": true,
+		"esModuleInterop": true,
+		"skipLibCheck": true,
+		"forceConsistentCasingInFileNames": true,
+		"moduleResolution": "nodenext",
+		"declaration": true,
+		"importHelpers": true,
+		"incremental": true,
+		"sourceMap": true,
+		"lib": ["esnext", "dom"],
+		"composite": true,
+		"noEmitOnError": true,
+		"experimentalDecorators": true,
+		"emitDecoratorMetadata": true		
+	}
+}

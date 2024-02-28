@@ -1,4 +1,4 @@
-import { Class } from './reflection';
+import { Class } from './reflection.js';
 
 /**
  * a string key wrapper that captures the type
@@ -35,16 +35,16 @@ export interface ClassKeyWrapper<TValue> {
 export type LookupKey<TValue = any> = string | Symbol | Class<TValue>;
 
 /**
- * wrapped key that captures the service type, 
+ * wrapped key that captures the service type,
  * when resolving the service, the type will automatically
  * be picked up from the captured type
  */
-export type WrappedKey<TValue> = StringKeyWrapper<TValue> | SymbolKeyWrapper<TValue> | ClassKeyWrapper<TValue>;
+export type WrappedKey<TValue = any> = StringKeyWrapper<TValue> | SymbolKeyWrapper<TValue> | ClassKeyWrapper<TValue>;
 
 /**
  * a key that can be used to resole services from the container
  */
-export type ResolveKey<TValue> = WrappedKey<TValue> | LookupKey<TValue>;
+export type ResolveKey<TValue = any> = WrappedKey<TValue> | LookupKey<TValue>;
 
 /**
  * interface use to allow a service resolver to rsolve
@@ -52,15 +52,7 @@ export type ResolveKey<TValue> = WrappedKey<TValue> | LookupKey<TValue>;
  */
 export interface Resolver {
 	/**
-	 * try to resolve a service value from the container.
-	 * @param key resolve key
-	 * @param tag resolve tag
-	 * @returns service value if resolved, undefined otherwise
-	 */
-	tryResolve<TValue = any>(key: ResolveKey<TValue>, tag?: string): TValue | undefined;
-
-	/**
-	 * resolve a service value from the container. 
+	 * resolve a service value from the container.
 	 * throws if not found.
 	 * @param key resolve key
 	 * @param tag resolve tag
@@ -71,33 +63,59 @@ export interface Resolver {
 }
 
 /**
- * represents a value lifetime, 
- * single = value is resolved and cached for the lifetime of the container root,
- * request = value is resolved on every resolve request,
- * scope = value is resolved once per scope and cache for that container scope. 
+ * represents a container instance
  */
-export type ValueLifetime = 'single' | 'request' | 'scope';
+export interface Container extends Resolver {
+	/**
+	 * create a new child container scope
+	 */
+	createScope(): Container;
+}
+
+/**
+ * represents a value lifetime,
+ * transient = value is always resolved.
+ * scope = value is resolved once per scope and cache for that container scope.
+ * single = value is resolved and cached for the lifetime of the container root.
+ */
+export type Lifetime = 'transient' | 'scope' | 'single';
 
 /**
  * a value resolver fn that given a resolver instance
  * will resolve a desired value
  */
-export type ValueResolver = (resolver: Resolver) => any;
+export type ResolveCallback<TValue = any> = (context: ResolveContext) => TValue;
+
+/**
+ * represents context used during
+ * value resolution.
+ */
+export interface ResolveContext extends Resolver {
+	/**
+	 * key being resolved
+	 */
+	key: ResolveKey;
+
+	/**
+	 * resolve tag
+	 */
+	tag?: string;
+}
 
 /**
  * a value provider object that implements methods
  * to resolve service values using a given resolver
  */
-export interface ValueProvider {
-	get(resolver: Resolver): any;
+export interface Provider<TValue = any> {
+	resolve: ResolveCallback<TValue>;
 }
 
 /**
  * value registration contains the information
  * that represents an entry in the containers lookup
- * registry. 
+ * registry.
  */
-export interface ValueRegistration {
+export interface Registration {
 	/**
 	 * registration id
 	 */
@@ -111,10 +129,10 @@ export interface ValueRegistration {
 	/**
 	 * value lifetime
 	 */
-	lifetime: ValueLifetime;
+	lifetime: Lifetime;
 
 	/**
-	 * value tag, use to register multiple 
+	 * value tag, use to register multiple
 	 * instances of the same type of value
 	 * but with different values
 	 */
@@ -123,5 +141,5 @@ export interface ValueRegistration {
 	/**
 	 * value provider
 	 */
-	provider: ValueProvider;
+	provider: Provider;
 }

@@ -7,22 +7,19 @@
 		{
 			"type": "node",
 			"request": "launch",
-			"name": "debug: tests",
+			"name": "Debug Current Test File",
+			"autoAttachChildProcesses": true,
 			"skipFiles": [
 				"<node_internals>/**",
-				"${workspaceFolder}/node_modules/**"
+				"**/node_modules/**"
 			],
-			"program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
+			"program": "${workspaceRoot}/node_modules/vitest/vitest.mjs",
 			"args": [
-				"--reporter",
-				"dot",
-				"--slow",
-				"28800000",
-				"--timeout",
-				"28800000",
-				"--colors"
+				"run",
+				"${relativeFile}"
 			],
-			"sourceMaps": true
+			"smartStep": true,
+			"console": "integratedTerminal"
 		}
 	]
 }

@@ -1,7 +1,8 @@
-import { getParameterList } from './decorators';
-import { Class, getParamterName, isConstructor } from './reflection';
-import { LookupKey, ResolveKey, Resolver, ValueLifetime, ValueProvider, ValueRegistration } from './types';
-import { getLookupKey, valueKeyToString } from './utils';
+import { getClassResolveInfo } from './decorators.js';
+import { InvalidParameterError, ResolveError } from './errors.js';
+import { Class, getParamterName, isConstructor } from './reflection.js';
+import { Container, LookupKey, ResolveKey, Provider, Registration, ResolveContext } from './types.js';
+import { getLookupKey, valueKeyToString } from './utils.js';
 
 /**
  * use to generate service registration ids
@@ -13,55 +14,85 @@ export function nextId() {
 }
 
 /**
+ * resets the registration id counter
+ */
+export function resetIds() {
+	registrationId = 0;
+}
+
+/**
  * uses reflection to automatically read constructor
  * parameter arguments and resolve the parameters
- * for a class from the container and create a new 
+ * for a class from the container and create a new
  * class instance
  */
-export class ClassValueProvider implements ValueProvider {
+export class ClassValueProvider implements Provider {
 	readonly class: Class<any>;
 
-	constructor(cls: Class<any>) {
-		this.class = cls;
+	constructor(_class: Class<any>) {
+		this.class = _class;
 	}
 
-	get(resolver: Resolver): any {
-		const parameters = getParameterList(this.class);
-		if(parameters.length == 0) {
-
-			// no constructor parameters
-			if(this.class.length === 0) {
-				return new this.class();
-			}
-			else {
-				throw new Error(`resolve failed: cannot create class=${this.class.name}, parameters required but no parameter list found`);
-			}
+	resolve(context: ResolveContext): any {
+		if(this.class.length === 0) {
+			return new this.class();
 		}
 
-		const values = parameters.map((parameter) => {
+		const classInfo = getClassResolveInfo(this.class);
+		if(classInfo.parameters.size == 0) {
+			throw new ResolveError(`cannot automatically resolve class=${this.class.name}. no constructor metadata found.`, {
+				key: context.key,
+				tag: context.tag,
+				class: this.class
+			});
+		}
+
+		const values: any[] = [];
+		const parameterCount = classInfo.parameters.size;
+		for(let parameterIndex = 0; parameterIndex < parameterCount; parameterIndex += 1) {
+			const resolveParameter = classInfo.parameters.get(parameterIndex);
 			try {
-				return resolver.resolve(parameter.key);
+				if(!resolveParameter) {
+					throw new InvalidParameterError(`cannot find parameter at index=${parameterIndex} from constructor metadata`, {
+						class_name: this.class.name,
+						parameter_index: parameterIndex
+					})
+				}
+
+				if(!resolveParameter.key) {
+					throw new InvalidParameterError(`invalid parameter key at index=${parameterIndex} from constructor metadata`, {
+						class_name: this.class.name,
+						parameter_index: parameterIndex,
+						parameter_name: getParamterName(this.class, parameterIndex)
+					})
+				}
+
+				const value = context.resolve(resolveParameter.key as ResolveKey, resolveParameter.tag);
+				values.push(value);
 			}
 			catch(error) {
-				const parameterName = getParamterName(this.class, parameter.index);
-				const message = `resolve failed: cannot inject parameter=${parameterName}, key=${valueKeyToString(parameter.key)}, class=${this.class.name}.`;
-				const resolveFail = new Error(message);
-				(resolveFail as any).cause = error;
-
-				throw resolveFail;
+				const parameterName = getParamterName(this.class, parameterIndex);
+				throw new ResolveError(`failed to inject parameter=${parameterName} for class=${this.class.name}`, {
+					class: this.class,
+					key: context.key,
+					tag: context.tag,
+					parameter_index: parameterIndex,
+					parameter_name: parameterName,
+					parameter_type: resolveParameter?.key
+				}).setCause(error);
 			}
-		});
+		}
 
 		return new this.class(...values);
 	}
 }
 
 /**
- * container registry, used to maintain 
+ * container registry, used to maintain
  * the mappings of lookup keys to servie registrations
  */
 export class Registry {
-	items: Map<LookupKey, ValueRegistration[]>;
+	items: Map<LookupKey, Registration[]>;
 
 	constructor() {
 		this.items = new Map();
@@ -72,7 +103,7 @@ export class Registry {
 	 * @param key lookup key
 	 * @param registration registration object
 	 */
-	add(key: LookupKey, registration: ValueRegistration): void {
+	set(key: LookupKey, registration: Registration): void {
 		let list = this.items.get(key);
 		if(!list) {
 			list = [];
@@ -88,7 +119,7 @@ export class Registry {
 	 * @param tag service tag
 	 * @returns registration if found, undefined otherwise
 	 */
-	get(key: LookupKey, tag?: string): ValueRegistration | undefined {
+	get(key: LookupKey, tag?: string): Registration | undefined {
 		let list = this.items.get(key);
 		if(!list) {
 			return undefined;
@@ -124,147 +155,57 @@ export class Registry {
 		if(tag) {
 			return this.get(key, tag) !== undefined;
 		}
-		
+
 		return this.items.has(key);
 	}
 }
 
 /**
- * register options, use to specify the configuration
- * for a registration
- */
-export interface RegisterOptions<TValue = any> {
-	/**
-	 * resolve key
-	 */
-	key: ResolveKey<TValue>;
-
-	/**
-	 * value tag
-	 */
-	tag?: string;
-
-	/**
-	 * value lifetime, defaults to 'request'
-	 */
-	lifetime?: ValueLifetime;
-
-	/**
-	 * class constructor, if provided
-	 * the container will automatically try to resolve
-	 * all the constructor parameters from the container
-	 * for the given class and return an instance of the 
-	 * class when the service value is resolved
-	 */
-	class?: Class<TValue>;
-
-	/**
-	 * singleton value, if provided
-	 * the container will return this static value
-	 * every time the service value is resolved
-	 */
-	value?: TValue;
-
-	/**
-	 * value builder, if provided,
-	 * the container will use this function callback
-	 * and pass a resolver instance to delegate the 
-	 * resolution of the service value
-	 * @param scope resolver scope
-	 * @returns value
-	 */
-	resolve?: (scope: Resolver) => TValue;
-}
-
-/**
  * dependency injection container.
  */
-export class Container implements Resolver {
+export class TinyContainer implements Container {
 	registry: Registry;
-	root: Container;
-	parent?: Container;
+	root: TinyContainer;
+	parent?: TinyContainer;
 	private scope: Map<LookupKey, Map<string, any>>;
 
-	constructor(parent?: Container) {
+	constructor(parent?: TinyContainer) {
 		this.registry = new Registry();
 		this.parent = parent;
 		this.root = this.parent ? this.parent.root : this;
 		this.scope = new Map<LookupKey, Map<string, any>>();
+		this.resolve = this.resolve.bind(this)
 	}
 
-	private getScopeValue(key: LookupKey, tag: string): any {
+	private getScopeValue(key: LookupKey, tag?: string): any {
 		const values = this.scope.get(key);
 		if(!values) {
 			return undefined;
 		}
 
-		const value = values.get(tag);
+		const valueKey = tag ?? '';
+		const value = values.get(valueKey);
 		return value;
 	}
 
-	private setScopeValue(key: LookupKey, tag: string, value: any) {
+	private setScopeValue(key: LookupKey, value: any, tag?: string) {
 		let values = this.scope.get(key);
+
+		/* istanbul ignore next */
 		if(!values) {
 			values = new Map<string, any>();
 			this.scope.set(key, values);
 		}
 
-		values.set(tag, value);
+		const valueKey = tag ?? '';
+		values.set(valueKey, value);
 	}
 
-	private registerInner(options: RegisterOptions): void {
-		let provider: ValueProvider;
-
-		if(options.resolve) {
-			// use get provider
-			provider = { get: options.resolve }
-		}		
-		else if(options.class) {
-			// use class provider
-			provider = new ClassValueProvider(options.class);
-		}
-		else if(options.value) {
-			// use value provider
-			provider = { get: () => options.value }
-		}	
-		else if(isConstructor(options.key)) {
-			// no class provider set, but since key is a class constructor
-			// use key as class provider
-			provider = new ClassValueProvider(options.key as Class<any>);
-		}
-		else {
-			throw new Error(`unknow provider type, options=${JSON.stringify(options)}`);
-		}
-
-		const registration: ValueRegistration = {
-			id: nextId(),
-			key: options.key,
-			lifetime: options.lifetime ?? 'request',
-			tag: options.tag,
-			provider
-		}
-
-		const lookup = getLookupKey(registration.key);
-		this.registry.add(lookup, registration);
-	}
-
-	register<TValue = any>(options: RegisterOptions<TValue>): void {	
-		this.registerInner(options);
-	}
-
-	resolve<TValue = any>(key: ResolveKey<TValue>, tag?: string): TValue {
-		const value = this.tryResolve(key, tag);
-		if(value === undefined)  {
-			throw new Error(`resolve failed: no registration found for service, key=${valueKeyToString(key)}, tag=${tag}`);
-		}
-
-		return value;
-	}
-
-	tryResolve<TValue = any>(key: ResolveKey<TValue>, tag?: string): TValue | undefined {
+	private resolveInner<TValue = any>(context: ResolveContext): TValue | undefined {
+		const { key, tag } = context;
 		const lookup = getLookupKey(key);
-		let scope: Container | undefined = this;
-		let registration: ValueRegistration | undefined;
+		let scope: TinyContainer | undefined = this;
+		let registration: Registration | undefined;
 
 		while(scope) {
 			registration = scope.registry.get(lookup, tag);
@@ -275,15 +216,14 @@ export class Container implements Resolver {
 			scope = scope.parent;
 		}
 
-		const isUnregisteredClass = 
-			registration === undefined 
+		const isUnregisteredClass =
+			registration === undefined
 			&& tag === undefined
 			&& isConstructor(lookup);
-				
 
 		if(isUnregisteredClass) {
-			const provider = new ClassValueProvider(lookup as Class<any>)
-			const instance = provider.get(this);
+			const provider = new ClassValueProvider(lookup as Class)
+			const instance = provider.resolve(context);
 			return instance;
 		}
 
@@ -294,38 +234,61 @@ export class Container implements Resolver {
 		switch(registration.lifetime) {
 			// resolve scoped values from the root
 			case 'single': {
-				let value = this.root.getScopeValue(lookup, tag ?? '');
+				let value = this.root.getScopeValue(lookup, tag);
 				if(value) {
 					return value;
 				}
 
-				value = registration.provider.get(this);
-				this.root.setScopeValue(lookup, tag ?? '', value);
+				value = registration.provider.resolve(context);
+				this.root.setScopeValue(lookup, value, tag);
 				return value;
 			}
 
 			// always return a new value
-			case 'request': {
-				let value = registration.provider.get(this);
+			case 'transient': {
+				let value = registration.provider.resolve(context);
 				return value;
 			}
 
 			// resolve scoped values from the current scope
-			// if not found walk up 
+			// if not found walk up
 			case 'scope': {
-				let value = this.getScopeValue(lookup, tag ?? '');
+				let value = this.getScopeValue(lookup, tag);
 				if(value) {
 					return value;
 				}
 
-				value = registration.provider.get(this);
-				this.setScopeValue(lookup, tag ?? '', value);
+				value = registration.provider.resolve(context);
+				this.setScopeValue(lookup, value, tag);
 				return value;
 			}
 		}
 	}
 
-	createScope(): Container {
-		return new Container(this);
+	register(registration: Registration): void {
+		registration.id = nextId();
+		const lookupKey = getLookupKey(registration.key);
+		this.registry.set(lookupKey, registration);
+	}
+
+	resolve<TValue = any>(key: ResolveKey<TValue>, tag?: string): TValue {
+		const context: ResolveContext = {
+			key,
+			tag,
+			resolve: this.resolve
+		}
+		const value = this.resolveInner(context);
+		if(value === undefined)  {
+			throw new ResolveError(`no registration found for key=${valueKeyToString(key)}, tag=${tag}`, {
+				key,
+				tag
+			})
+		}
+
+		return value;
+	}
+
+	createScope(): TinyContainer {
+		return new TinyContainer(this);
 	}
 }

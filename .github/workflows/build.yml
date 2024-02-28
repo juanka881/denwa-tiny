@@ -1,0 +1,43 @@
+name: Build
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [21.x]
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: pnpm/action-setup@v3
+      with:
+        version: latest
+
+    - name: Setup node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'pnpm'
+
+    - name: Install packages
+      run: pnpm install
+
+    - name: Build Project
+      run: pnpm build
+
+    - name: Run Tests
+      run: pnpm test
+
+    - name: Run Benchmarks
+      run: pnpm bench
+
+    - name: Publish Package
+      uses: JS-DevTools/npm-publish@v3
+      with:
+        token: ${{ secrets.NPM_TOKEN }}
+        access: public

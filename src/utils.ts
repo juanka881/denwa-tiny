@@ -1,5 +1,5 @@
-import { Class } from './reflection';
-import { ClassKeyWrapper, StringKeyWrapper, SymbolKeyWrapper, WrappedKey, LookupKey, ResolveKey } from './types';
+import { Class } from './reflection.js';
+import { ClassKeyWrapper, StringKeyWrapper, SymbolKeyWrapper, WrappedKey, LookupKey, ResolveKey } from './types.js';
 
 /**
  * creates a new string key, all string keys match on string value
@@ -7,34 +7,34 @@ import { ClassKeyWrapper, StringKeyWrapper, SymbolKeyWrapper, WrappedKey, Lookup
  * @returns string key wrapper
  */
 export function stringKey<T>(name: string): StringKeyWrapper<T> {
-	return { 
-		type: 'string', 
+	return {
+		type: 'string',
 		name
 	}
 }
 
 /**
  * creates a new symbol key, every symbol key is unique and will
- * only match on the same object reference 
+ * only match on the same object reference
  * @param name key name
  * @returns symbol key wrapper
  */
 export function symbolKey<T>(name: string): SymbolKeyWrapper<T> {
-	return { 
-		type: 'symbol', 
+	return {
+		type: 'symbol',
 		symbol: Symbol(name)
 	};
 }
 
 /**
- * creates a new class key, every class key matches on the 
+ * creates a new class key, every class key matches on the
  * constructor function
  * @param cls class constructor
  * @returns class key wrapper
  */
 export function classKey<T>(cls: Class<T>): ClassKeyWrapper<T> {
-	return { 
-		type: 'class', 
+	return {
+		type: 'class',
 		cls: cls
 	};
 }
