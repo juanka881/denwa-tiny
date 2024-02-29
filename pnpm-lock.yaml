@@ -6,8 +6,8 @@ settings:
 
 dependencies:
   '@denwa/xerror':
-    specifier: ^3.0.0
-    version: 3.0.0
+    specifier: ^3.2.0
+    version: 3.2.0
   reflect-metadata:
     specifier: ^0.1.13
     version: 0.1.13
@@ -236,8 +236,8 @@ packages:
       to-fast-properties: 2.0.0
     dev: true
 
-  /@denwa/xerror@3.0.0:
-    resolution: {integrity: sha512-wT+JBagEUS0V+YfKvGn/f6gVRIQed5jmTU4sYoU5gcbEHCbzYSIAFmusVVKsW34vJ2XaOUGUDl2LwVwuAxYAbA==}
+  /@denwa/xerror@3.2.0:
+    resolution: {integrity: sha512-1DJA7oj8OuqZaZA7WEaBIh2Ahk6mEcv3ajPPHQsGExyBqeWAV+4CAdjtBHzjAV4tpcbZTOkk9NzxUJAq9eUc9Q==}
     requiresBuild: true
     dependencies:
       tslib: 2.6.2

@@ -12,7 +12,7 @@ export class InvalidParameterError extends XError<InvalidParameterDetail> {
 	constructor(message?: string, detail?: InvalidParameterDetail) {
 		/* istanbul ignore next */
 		super(message ?? 'invalid parameter', detail);
-		this.transient = false;
+		this.retryable = false;
 	}
 }
 
@@ -24,7 +24,7 @@ export class InvalidConstructorError extends XError<InvalidConstructorDetail> {
 	constructor(message?: string, detail?: InvalidConstructorDetail) {
 		/* istanbul ignore next */
 		super(message ?? 'invalid constructor', detail);
-		this.transient = false;
+		this.retryable = false;
 	}
 }
 
