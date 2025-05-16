@@ -7,7 +7,7 @@ suite('TinyBuilder', function () {
 	test('can build registration', function () {
 		const builder = new TinyBuilder();
 		const reg = builder.as('log')
-			.with(() => console.log)
+			.create(() => console.log)
 			.build();
 
 		assert.equal(reg.id, 0);
@@ -31,7 +31,7 @@ suite('TinyBuilder', function () {
 
 	test('can set singleton lifetime', function () {
 		const builder = new TinyBuilder();
-		builder.as('foo').with(() => 42).singleton();
+		builder.as('foo').create(() => 42).singleton();
 
 		const reg = builder.build();
 		assert.equal(reg.lifetime, 'single');
@@ -39,7 +39,7 @@ suite('TinyBuilder', function () {
 
 	test('can set transient lifetime', function () {
 		const builder = new TinyBuilder();
-		builder.as('foo').with(() => 42).transient();
+		builder.as('foo').create(() => 42).transient();
 
 		const reg = builder.build();
 		assert.equal(reg.lifetime, 'transient');
@@ -47,7 +47,7 @@ suite('TinyBuilder', function () {
 
 	test('can set scoped lifetime', function () {
 		const builder = new TinyBuilder();
-		builder.as('foo').with(() => 42).scoped();
+		builder.as('foo').create(() => 42).scoped();
 
 		const reg = builder.build();
 		assert.equal(reg.lifetime, 'scope');
@@ -66,7 +66,7 @@ suite('TinyBuilder', function () {
 
 	test('can set tag', function () {
 		const builder = new TinyBuilder();
-		builder.as('foo').with(() => 42).tag('bar');
+		builder.as('foo').create(() => 42).tag('bar');
 
 		const reg = builder.build();
 		assert.equal(reg.tag, 'bar');
@@ -84,7 +84,7 @@ suite('Tiny', function () {
 		const tiny = new Tiny();
 		const key = 'foo';
 		const value = 42;
-		tiny.addValue(key, value);
+		tiny.registerValue(key, value);
 
 		const container = tiny.build();
 		const actual = container.resolve(key);
@@ -97,7 +97,7 @@ suite('Tiny', function () {
 		class Foo {}
 
 		const tiny = new Tiny();
-		tiny.addClass(Foo);
+		tiny.registerClass(Foo);
 
 		const container = tiny.build();
 		const instance = container.resolve(Foo);
@@ -110,7 +110,7 @@ suite('Tiny', function () {
 		const value = 'hello';
 		const resolve: ResolveCallback = () => value;
 		const tiny = new Tiny();
-		tiny.add(resolve).as(key);
+		tiny.register(resolve).as(key);
 
 		const container = tiny.build();
 		const result = container.resolve(key);

@@ -19,9 +19,9 @@ class Zul {
 }
 
 const tiny = new Tiny();
-tiny.addValue('foo', 42);
-tiny.addValue(Magic, 88);
-tiny.add(t => new Foo(t.resolve(Bar)))
+tiny.registerValue('foo', 42);
+tiny.registerValue(Magic, 88);
+tiny.register(t => new Foo(t.resolve(Bar)))
 	.as(Foo)
 	.tag('foo');
 

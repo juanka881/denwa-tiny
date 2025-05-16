@@ -45,7 +45,7 @@ suite('Registry', function() {
 
 	test('can set and get registration', function() {
 		const builder = new TinyBuilder();
-		const reg = builder.with(() => 42).as('foo').build();
+		const reg = builder.create(() => 42).as('foo').build();
 
 		const registry = new Registry();
 		const key = getLookupKey(reg.key);
@@ -57,7 +57,7 @@ suite('Registry', function() {
 
 	test('get returns undefined if tag not found', function() {
 		const builder = new TinyBuilder();
-		const reg = builder.with(() => 42).as('foo').build();
+		const reg = builder.create(() => 42).as('foo').build();
 
 		const registry = new Registry();
 		const key = getLookupKey(reg.key);
@@ -69,8 +69,8 @@ suite('Registry', function() {
 
 	test('has can check if key exists', function() {
 		const builder = new TinyBuilder();
-		const reg = builder.with(() => 42).as('foo').build();
-		const taggedReg = builder.with(() => 42)
+		const reg = builder.create(() => 42).as('foo').build();
+		const taggedReg = builder.create(() => 42)
 			.as('foo')
 			.tag('bar')
 			.build();
@@ -97,7 +97,7 @@ suite('TinyContainer', function() {
 		const tiny = new Tiny();
 		const key = 'foo';
 		const value = 42;
-		tiny.addValue(key, value);
+		tiny.registerValue(key, value);
 
 		const container = tiny.build();
 		const _value = container.resolve(key);
@@ -108,7 +108,7 @@ suite('TinyContainer', function() {
 	test('can resolve class', function() {
 		class Foo {}
 		const tiny = new Tiny();
-		tiny.addClass(Foo);
+		tiny.registerClass(Foo);
 
 		const container = tiny.build();
 		const value = container.resolve(Foo);
@@ -120,7 +120,7 @@ suite('TinyContainer', function() {
 		const tiny = new Tiny();
 		const key = 'foo';
 		const value = 42;
-		tiny.add(() => value).as(key);
+		tiny.register(() => value).as(key);
 
 		const container = tiny.build();
 		const _value = container.resolve(key);
@@ -139,7 +139,7 @@ suite('TinyContainer', function() {
 
 	test('can inject dependencies via decorator', function() {
 		const tiny = new Tiny();
-		tiny.addValue(MagicKey, 42);
+		tiny.registerValue(MagicKey, 42);
 
 		const container = tiny.build();
 		const value = container.resolve(Zul);
@@ -150,8 +150,8 @@ suite('TinyContainer', function() {
 
 	test('can override registration', function() {
 		const tiny = new Tiny();
-		tiny.addValue(MagicKey, 42);
-		tiny.addValue(MagicKey, 100);
+		tiny.registerValue(MagicKey, 42);
+		tiny.registerValue(MagicKey, 100);
 
 		const container = tiny.build();
 		const value = container.resolve(MagicKey);
@@ -161,8 +161,8 @@ suite('TinyContainer', function() {
 
 	test('can add multiple values of same key with tag', function() {
 		const tiny = new Tiny();
-		tiny.add(() => 42).as(MagicKey).tag('foo');
-		tiny.add(() => 100).as(MagicKey).tag('bar');
+		tiny.register(() => 42).as(MagicKey).tag('foo');
+		tiny.register(() => 100).as(MagicKey).tag('bar');
 
 		const container = tiny.build();
 		const value1 = container.resolve(MagicKey, 'foo');
@@ -263,7 +263,7 @@ suite('TinyContainer', function() {
 
 	test('single lifetime returns the same value always', function() {
 		const tiny = new Tiny();
-		tiny.addClass(Foo).singleton();
+		tiny.registerClass(Foo).singleton();
 
 		const container = tiny.build();
 		const child1 = container.createScope();
@@ -276,8 +276,8 @@ suite('TinyContainer', function() {
 
 	test('scope lifetime returns the same instance for that container scope', function() {
 		const tiny = new Tiny();
-		tiny.addClass(Foo).scoped();
-		tiny.addClass(Bar).scoped();
+		tiny.registerClass(Foo).scoped();
+		tiny.registerClass(Bar).scoped();
 
 		const container = tiny.build();
 		const child1 = container.createScope();

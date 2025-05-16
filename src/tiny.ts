@@ -54,7 +54,7 @@ export class TinyBuilder<TValue = any> {
 		return this;
 	}
 
-	with(resolver: ResolveCallback<TValue>): this {
+	create(resolver: ResolveCallback<TValue>): this {
 		this._provider = { resolve: resolver };
 		return this;
 	}
@@ -72,18 +72,18 @@ export class Tiny {
 		this.builders = [];
 	}
 
-	addValue<TValue>(key: ResolveKey, value: any): TinyBuilder<TValue> {
+	registerValue<TValue>(key: ResolveKey, value: any): TinyBuilder<TValue> {
 		const builder = new TinyBuilder();
 		this.builders.push(builder);
 
-		builder.with(() => value)
+		builder.create(() => value)
 			.as(key)
 			.singleton();
 
 		return builder;
 	}
 
-	addClass<TValue>(_class: Class): TinyBuilder<TValue> {
+	registerClass<TValue>(_class: Class): TinyBuilder<TValue> {
 		const builder = new TinyBuilder();
 		this.builders.push(builder);
 
@@ -91,11 +91,11 @@ export class Tiny {
 		return builder;
 	}
 
-	add<TValue>(resolve: ResolveCallback<TValue>): TinyBuilder {
+	register<TValue>(resolve: ResolveCallback<TValue>): TinyBuilder {
 		const builder = new TinyBuilder();
 		this.builders.push(builder);
 
-		builder.with(resolve);
+		builder.create(resolve);
 		return builder;
 	}
 

@@ -174,7 +174,7 @@ export class TinyContainer implements Container {
 		this.parent = parent;
 		this.root = this.parent ? this.parent.root : this;
 		this.scope = new Map<LookupKey, Map<string, any>>();
-		this.resolve = this.resolve.bind(this)
+		this.resolve = this.resolve.bind(this);
 	}
 
 	private getScopeValue(key: LookupKey, tag?: string): any {

@@ -2,33 +2,33 @@ import { XError } from '@denwa/xerror';
 import { Class } from './reflection.js';
 import { ResolveKey } from './types.js';
 
-export interface InvalidParameterDetail {
+export interface InvalidParameterInfo {
 	class_name?: string;
 	parameter_name?: string;
 	parameter_index?: number;
 }
 
-export class InvalidParameterError extends XError<InvalidParameterDetail> {
-	constructor(message?: string, detail?: InvalidParameterDetail) {
+export class InvalidParameterError extends XError<InvalidParameterInfo> {
+	constructor(message?: string, info?: InvalidParameterInfo) {
 		/* istanbul ignore next */
-		super(message ?? 'invalid parameter', detail);
+		super(message ?? 'invalid parameter', info);
 		this.retryable = false;
 	}
 }
 
-export interface InvalidConstructorDetail {
+export interface InvalidConstructorInfo {
 	target: unknown;
 }
 
-export class InvalidConstructorError extends XError<InvalidConstructorDetail> {
-	constructor(message?: string, detail?: InvalidConstructorDetail) {
+export class InvalidConstructorError extends XError<InvalidConstructorInfo> {
+	constructor(message?: string, info?: InvalidConstructorInfo) {
 		/* istanbul ignore next */
-		super(message ?? 'invalid constructor', detail);
+		super(message ?? 'invalid constructor', info);
 		this.retryable = false;
 	}
 }
 
-export interface ResolveDetail {
+export interface ResolveInfo {
 	key: ResolveKey;
 	tag?: string;
 	class?: Class;
@@ -37,9 +37,9 @@ export interface ResolveDetail {
 	parameter_type?: ResolveKey;
 }
 
-export class ResolveError extends XError<ResolveDetail> {
-	constructor(message?: string, detail?: ResolveDetail) {
+export class ResolveError extends XError<ResolveInfo> {
+	constructor(message?: string, info?: ResolveInfo) {
 		/* istanbul ignore next */
-		super(message ?? 'resolve failed', detail);
+		super(message ?? 'resolve failed', info);
 	}
 }
